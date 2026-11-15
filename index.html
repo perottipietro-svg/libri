@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7a3b1d">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>I miei libri</title>
+<style>
+:root{
+  --bg:#f6ead7; --card:#fffaf1; --ink:#2b1a0f; --muted:#7d6a58; --line:#e2d0b6;
+  --brand:#7a3b1d; --brand-ink:#fff; --accent:#c98a4b; --ok:#2e7d4f; --bad:#b3261e;
+  --chip:#efdcc0; --chip-on:#7a3b1d;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#1d140d; --card:#2a1d13; --ink:#f3e6d2; --muted:#a89580; --line:#44301f;
+    --brand:#d89a5b; --brand-ink:#1d140d; --accent:#c98a4b; --chip:#3a2819; --chip-on:#d89a5b; --ok:#6cc58d; --bad:#ff8a80; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:var(--brand-ink);padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:18px;margin:0;font-weight:650}
+header .count{font-size:14px;opacity:.85}
+main{max-width:860px;margin:0 auto;padding:14px 16px}
+section{display:none}
+section.on{display:block}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:6}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:10px 4px;font:inherit;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav button .ic{font-size:20px;line-height:1}
+nav button.on{color:var(--brand);font-weight:650}
+input,select,textarea,button{font:inherit;color:inherit}
+input[type=text],input[type=search],input[type=number],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+textarea{min-height:70px;resize:vertical}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.btn{border:0;border-radius:10px;padding:10px 16px;background:var(--brand);color:var(--brand-ink);font-weight:600;cursor:pointer}
+.btn.sec{background:var(--chip);color:var(--ink)}
+.btn.bad{background:var(--bad);color:#fff}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.grow{flex:1}
+.tools{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:5px 12px;font-size:14px;cursor:pointer;user-select:none}
+.chip.on{background:var(--chip-on);color:var(--brand-ink);border-color:var(--chip-on)}
+.card{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;cursor:pointer}
+.cover{width:56px;height:80px;flex:none;border-radius:4px;background:var(--chip) center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)}
+.card h3{margin:0;font-size:16px;line-height:1.25}
+.card .au{color:var(--muted);font-size:14px}
+.card .cats{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}
+.badge{font-size:12px;background:var(--chip);border-radius:999px;padding:2px 8px}
+.badge.read{background:var(--ok);color:#fff}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.scanbox{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:4/3;max-height:50vh;width:100%}
+.scanbox video{width:100%;height:100%;object-fit:cover}
+.scanbox .guide{position:absolute;left:12%;right:12%;top:35%;bottom:35%;border:2px solid rgba(255,255,255,.85);border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.35);pointer-events:none}
+.scanbox .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#ddd;text-align:center;padding:20px}
+.status{min-height:24px;margin:8px 0;font-size:15px}
+.status.ok{color:var(--ok)} .status.bad{color:var(--bad)}
+.recent{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0}
+.cat-row{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}
+.cat-row .n{flex:1}
+.cat-row small{color:var(--muted)}
+.note{color:var(--muted);font-size:14px}
+.warn{background:#fff3cd;color:#5a4400;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+dialog{border:0;border-radius:16px;padding:16px;width:min(560px,94vw);max-height:92vh;background:var(--bg);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 4px;font-size:18px}
+.toast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+.sticky-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+h2.sec{font-size:16px;margin:20px 0 6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 I miei libri</h1>
+  <span class="count" id="hdrCount"></span>
+</header>
+
+<main>
+  <!-- LIBRERIA -->
+  <section id="tab-lib" class="on">
+    <div id="backupWarn" class="warn" hidden></div>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Cerca titolo, autore, ISBN…">
+      <select id="sort" aria-label="Ordina">
+        <option value="added">Più recenti</option>
+        <option value="title">Titolo A-Z</option>
+        <option value="author">Autore A-Z</option>
+      </select>
+      <button class="btn" id="addManual" title="Aggiungi a mano">＋</button>
+    </div>
+    <div class="chips" id="filterChips"></div>
+    <div id="list"></div>
+  </section>
+
+  <!-- SCANSIONA -->
+  <section id="tab-scan">
+    <label>Aggiungi i libri scansionati in queste categorie</label>
+    <div class="chips" id="scanCats"></div>
+    <div class="scanbox">
+      <video id="video" playsinline muted></video>
+      <div class="guide" id="guide" hidden></div>
+      <div class="ph" id="ph">Premi “Avvia fotocamera” e inquadra il codice a barre sul retro del libro (quello che inizia con 978 o 979).</div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn grow" id="camBtn">Avvia fotocamera</button>
+    </div>
+    <div class="status" id="status"></div>
+    <label for="isbnIn">Oppure scrivi l’ISBN (o usa un lettore USB e premi invio)</label>
+    <div class="row">
+      <input type="text" id="isbnIn" inputmode="numeric" placeholder="978…" autocomplete="off">
+      <button class="btn" id="isbnGo">Aggiungi</button>
+    </div>
+    <h2 class="sec">Appena aggiunti</h2>
+    <div id="recent"><div class="note">Nessun libro aggiunto in questa sessione.</div></div>
+  </section>
+
+  <!-- CATEGORIE -->
+  <section id="tab-cat">
+    <div class="row">
+      <input type="text" id="newCat" placeholder="Nuova categoria (es. Romanzi, Storia, Cucina…)">
+      <button class="btn" id="addCat">Aggiungi</button>
+    </div>
+    <div id="catList"></div>
+    <p class="note">Un libro può stare in più categorie. Eliminare una categoria non elimina i libri.</p>
+  </section>
+
+  <!-- DATI -->
+  <section id="tab-data">
+    <h2 class="sec" style="margin-top:0">Copia di sicurezza</h2>
+    <p class="note">I libri sono salvati solo su questo dispositivo. Per averli anche sull’altro (telefono ↔ portatile) esporta qui e importa lì. Esporta ogni tanto anche come backup.</p>
+    <div class="row" style="flex-wrap:wrap">
+      <button class="btn" id="expJson">Esporta backup (JSON)</button>
+      <button class="btn sec" id="expCsv">Esporta per Excel (CSV)</button>
+    </div>
+    <h2 class="sec">Importa</h2>
+    <p class="note">Carica un backup JSON esportato dall’app: i libri nuovi vengono aggiunti, quelli già presenti (stesso ISBN) restano come sono.</p>
+    <input type="file" id="impFile" accept=".json,application/json">
+    <h2 class="sec">Stato</h2>
+    <div id="stats" class="note"></div>
+  </section>
+</main>
+
+<nav>
+  <button data-tab="lib" class="on"><span class="ic">📖</span>Libreria</button>
+  <button data-tab="scan"><span class="ic">📷</span>Scansiona</button>
+  <button data-tab="cat"><span class="ic">🏷️</span>Categorie</button>
+  <button data-tab="data"><span class="ic">💾</span>Dati</button>
+</nav>
+
+<!-- scheda libro -->
+<dialog id="dlg">
+  <form method="dialog" id="bookForm">
+    <h2 id="dlgTitle">Libro</h2>
+    <label>Titolo</label><input type="text" id="f_title" required>
+    <label>Autori</label><input type="text" id="f_authors" placeholder="separati da virgola">
+    <div class="row">
+      <div class="grow"><label>ISBN</label><input type="text" id="f_isbn" inputmode="numeric"></div>
+      <div class="grow"><label>Anno</label><input type="text" id="f_year" inputmode="numeric"></div>
+      <div class="grow"><label>Pagine</label><input type="text" id="f_pages" inputmode="numeric"></div>
+    </div>
+    <label>Editore</label><input type="text" id="f_publisher">
+    <label>Categorie</label><div class="chips" id="f_cats"></div>
+    <label>Note</label><textarea id="f_notes"></textarea>
+    <label>URL copertina</label><input type="text" id="f_cover">
+    <label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:16px"><input type="checkbox" id="f_read"> Letto</label>
+    <div class="sticky-actions">
+      <button type="button" class="btn bad" id="f_del">Elimina</button>
+      <button type="button" class="btn sec" id="f_cancel">Annulla</button>
+      <button type="submit" class="btn" id="f_save">Salva</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script src="lib/zxing.min.js"></script>
+<script>
+'use strict';
+/* ========= archivio (IndexedDB) ========= */
+const DB = {
+  db: null,
+  open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('libri', 1);
+      r.onupgradeneeded = () => {
+        r.result.createObjectStore('books', { keyPath: 'id' });
+        r.result.createObjectStore('kv');
+      };
+      r.onsuccess = () => { this.db = r.result; res(); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise((res, rej) => {
+      const t = this.db.transaction(store, mode);
+      const s = t.objectStore(store);
+      const out = fn(s);
+      t.oncomplete = () => res(out && out.result);
+      t.onerror = () => rej(t.error);
+    });
+  },
+  all() { return this.tx('books', 'readonly', s => s.getAll()); },
+  put(b) { return this.tx('books', 'readwrite', s => s.put(b)); },
+  del(id) { return this.tx('books', 'readwrite', s => s.delete(id)); },
+  get(k) { return this.tx('kv', 'readonly', s => s.get(k)); },
+  set(k, v) { return this.tx('kv', 'readwrite', s => s.put(v, k)); }
+};
+
+/* ========= stato ========= */
+let books = [];
+let categories = [];
+let filterCat = null;   // null = tutte, '' = senza categoria, altro = nome
+let scanCats = [];      // categorie selezionate per la scansione
+let editing = null;     // libro in modifica (oggetto) o nuovo
+let isNew = false;
+let lastExport = 0;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+let toastT;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600);
+}
+function persistCats() { return DB.set('categories', categories); }
+
+/* ========= ISBN ========= */
+function isbn10to13(s) {
+  const core = '978' + s.slice(0, 9);
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += +core[i] * (i % 2 ? 3 : 1);
+  return core + ((10 - sum % 10) % 10);
+}
+function validIsbn10(s) {
+  if (!/^\d{9}[\dXx]$/.test(s)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += (10 - i) * +s[i];
+  sum += s[9].toUpperCase() === 'X' ? 10 : +s[9];
+  return sum % 11 === 0;
+}
+function validIsbn13(s) {
+  if (!/^97[89]\d{10}$/.test(s)) return false;
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += +s[i] * (i % 2 ? 3 : 1);
+  return (10 - sum % 10) % 10 === +s[12];
+}
+function normIsbn(raw) {
+  const s = String(raw).replace(/[\s-]/g, '');
+  if (validIsbn13(s)) return s;
+  if (validIsbn10(s)) return isbn10to13(s);
+  return null;
+}
+
+/* ========= ricerca dati libro online ========= */
+async function lookupGoogle(isbn) {
+  const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&maxResults=1');
+  if (!r.ok) throw new Error('google ' + r.status);
+  const j = await r.json();
+  const v = j.items && j.items[0] && j.items[0].volumeInfo;
+  if (!v || !v.title) return null;
+  let cover = v.imageLinks && (v.imageLinks.thumbnail || v.imageLinks.smallThumbnail) || '';
+  cover = cover.replace(/^http:/, 'https:').replace('&edge=curl', '');
+  return {
+    title: v.title + (v.subtitle ? ': ' + v.subtitle : ''),
+    authors: (v.authors || []).join(', '),
+    publisher: v.publisher || '',
+    year: (v.publishedDate || '').slice(0, 4),
+    pages: v.pageCount ? String(v.pageCount) : '',
+    cover
+  };
+}
+async function lookupOpenLibrary(isbn) {
+  const r = await fetch('https://openlibrary.org/api/books?bibkeys=ISBN:' + isbn + '&format=json&jscmd=data');
+  if (!r.ok) throw new Error('ol ' + r.status);
+  const j = await r.json();
+  const v = j['ISBN:' + isbn];
+  if (!v || !v.title) return null;
+  return {
+    title: v.title + (v.subtitle ? ': ' + v.subtitle : ''),
+    authors: (v.authors || []).map(a => a.name).join(', '),
+    publisher: (v.publishers || []).map(p => p.name).join(', '),
+    year: ((v.publish_date || '').match(/\d{4}/) || [''])[0],
+    pages: v.number_of_pages ? String(v.number_of_pages) : '',
+    cover: v.cover ? (v.cover.medium || v.cover.small || '') : ''
+  };
+}
+async function lookup(isbn) {
+  let netErr = false;
+  for (const fn of [lookupGoogle, lookupOpenLibrary]) {
+    try { const r = await fn(isbn); if (r) return { info: r }; }
+    catch (e) { netErr = true; }
+  }
+  return { info: null, netErr };
+}
+
+/* ========= aggiunta libro ========= */
+function blankBook(isbn = '') {
+  return { id: uid(), isbn, title: '', authors: '', publisher: '', year: '', pages: '', cover: '', notes: '', read: false, categories: [], added: Date.now() };
+}
+const recent = [];
+function renderRecent() {
+  const el = $('recent');
+  if (!recent.length) { el.innerHTML = '<div class="note">Nessun libro aggiunto in questa sessione.</div>'; return; }
+  el.innerHTML = recent.slice(0, 8).map(b => `
+    <div class="recent">
+      <div class="cover" style="width:36px;height:52px;background-image:${b.cover ? `url('${esc(b.cover)}')` : 'none'}">${b.cover ? '' : '📕'}</div>
+      <div class="grow"><b>${esc(b.title)}</b><div class="note">${esc(b.authors)}</div></div>
+      <button class="btn sec" data-undo="${b.id}">Annulla</button>
+    </div>`).join('');
+}
+$('recent').addEventListener('click', async e => {
+  const id = e.target.dataset && e.target.dataset.undo;
+  if (!id) return;
+  await DB.del(id);
+  books = books.filter(b => b.id !== id);
+  const i = recent.findIndex(b => b.id === id); if (i >= 0) recent.splice(i, 1);
+  renderRecent(); renderAll(); toast('Libro rimosso');
+});
+
+function setStatus(msg, cls = '') { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; }
+
+let busy = false;
+async function addByIsbn(isbn) {
+  const dup = books.find(b => b.isbn === isbn);
+  if (dup) { setStatus('Già in libreria: ' + dup.title, 'bad'); beep(false); return; }
+  busy = true;
+  setStatus('Cerco ' + isbn + '…');
+  const { info, netErr } = await lookup(isbn);
+  if (!info) {
+    setStatus((netErr ? 'Nessuna connessione o servizio non raggiungibile. ' : 'ISBN non trovato negli archivi. ') + 'Compila a mano.', 'bad');
+    beep(false);
+    const b = blankBook(isbn); b.categories = [...scanCats];
+    openDialog(b, true);   // busy resta true finché la scheda non si chiude
+    return;
+  }
+  const b = Object.assign(blankBook(isbn), info, { categories: [...scanCats] });
+  await DB.put(b); books.push(b);
+  recent.unshift(b); renderRecent(); renderAll();
+  setStatus('✓ ' + b.title, 'ok'); beep(true);
+  busy = false;
+}
+
+/* ========= scansione ========= */
+let stream = null, zreader = null, detTimer = null, lastSeen = {};
+let AC;
+function beep(ok) {
+  try { if (navigator.vibrate) navigator.vibrate(ok ? 80 : [60, 60, 60]); } catch (_) {}
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.frequency.value = ok ? 880 : 300; g.gain.value = 0.08;
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime + 0.12);
+  } catch (_) {}
+}
+function onCode(raw) {
+  const isbn = normIsbn(raw);
+  if (!isbn || busy) return;
+  const now = Date.now();
+  if (lastSeen[isbn] && now - lastSeen[isbn] < 4000) return;
+  lastSeen[isbn] = now;
+  addByIsbn(isbn);
+}
+async function startCam() {
+  if (stream) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    setStatus('Fotocamera non disponibile: serve una pagina https (o localhost).', 'bad'); return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (e) {
+    setStatus('Non riesco ad usare la fotocamera (' + (e.name || 'errore') + '). Controlla i permessi del browser.', 'bad'); return;
+  }
+  const v = $('video'); v.srcObject = stream; await v.play().catch(() => {});
+  $('ph').hidden = true; $('guide').hidden = false; $('camBtn').textContent = 'Ferma fotocamera';
+  setStatus('Inquadra il codice a barre…');
+  let native = false;
+  try {
+    if ('BarcodeDetector' in window) {
+      const f = await BarcodeDetector.getSupportedFormats();
+      native = f.includes('ean_13');
+    }
+  } catch (_) {}
+  if (native) {
+    const det = new BarcodeDetector({ formats: ['ean_13'] });
+    detTimer = setInterval(async () => {
+      if (v.readyState < 2 || busy) return;
+      try { const r = await det.detect(v); if (r[0]) onCode(r[0].rawValue); } catch (_) {}
+    }, 250);
+  } else if (window.ZXing) {
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    zreader = new ZXing.BrowserMultiFormatReader(hints, 300);
+    zreader.decodeFromStream(stream, v, (res) => { if (res) onCode(res.getText()); });
+  }
+}
+function stopCam() {
+  clearInterval(detTimer); detTimer = null;
+  try { if (zreader) zreader.reset(); } catch (_) {}
+  zreader = null;
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $('video').srcObject = null;
+  $('ph').hidden = false; $('guide').hidden = true; $('camBtn').textContent = 'Avvia fotocamera';
+}
+$('camBtn').onclick = () => stream ? stopCam() : startCam();
+function manualIsbn() {
+  const raw = $('isbnIn').value;
+  const isbn = normIsbn(raw);
+  if (!isbn) { setStatus('ISBN non valido: controlla le cifre.', 'bad'); return; }
+  $('isbnIn').value = '';
+  if (!busy) addByIsbn(isbn);
+}
+$('isbnGo').onclick = manualIsbn;
+$('isbnIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); manualIsbn(); } });
+
+/* ========= scheda libro ========= */
+function chipsHtml(selected, attr) {
+  if (!categories.length) return '<span class="note">Nessuna categoria: creale nella scheda Categorie.</span>';
+  return categories.map(c => `<span class="chip ${selected.includes(c) ? 'on' : ''}" ${attr}="${esc(c)}">${esc(c)}</span>`).join('');
+}
+function openDialog(b, fresh) {
+  editing = JSON.parse(JSON.stringify(b)); isNew = !!fresh;
+  $('dlgTitle').textContent = fresh ? 'Nuovo libro' : 'Modifica libro';
+  $('f_title').value = b.title; $('f_authors').value = b.authors; $('f_isbn').value = b.isbn;
+  $('f_year').value = b.year; $('f_pages').value = b.pages; $('f_publisher').value = b.publisher;
+  $('f_notes').value = b.notes; $('f_cover').value = b.cover; $('f_read').checked = !!b.read;
+  $('f_del').style.display = fresh ? 'none' : '';
+  $('f_cats').innerHTML = chipsHtml(editing.categories, 'data-fc');
+  $('dlg').showModal();
+}
+$('f_cats').addEventListener('click', e => {
+  const c = e.target.dataset && e.target.dataset.fc; if (!c) return;
+  const i = editing.categories.indexOf(c);
+  if (i >= 0) editing.categories.splice(i, 1); else editing.categories.push(c);
+  $('f_cats').innerHTML = chipsHtml(editing.categories, 'data-fc');
+});
+$('dlg').addEventListener('close', () => { busy = false; });
+$('f_cancel').onclick = () => $('dlg').close();
+$('bookForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = editing;
+  b.title = $('f_title').value.trim(); b.authors = $('f_authors').value.trim();
+  const rawIsbn = $('f_isbn').value.trim();
+  b.isbn = normIsbn(rawIsbn) || rawIsbn.replace(/[\s-]/g, '');
+  b.year = $('f_year').value.trim(); b.pages = $('f_pages').value.trim();
+  b.publisher = $('f_publisher').value.trim(); b.notes = $('f_notes').value.trim();
+  b.cover = $('f_cover').value.trim(); b.read = $('f_read').checked;
+  if (isNew && b.isbn && books.some(x => x.isbn === b.isbn)) { toast('Questo ISBN è già in libreria'); return; }
+  await DB.put(b);
+  const i = books.findIndex(x => x.id === b.id);
+  if (i >= 0) books[i] = b; else { books.push(b); if (isNew) { recent.unshift(b); renderRecent(); } }
+  $('dlg').close(); renderAll(); toast('Salvato');
+});
+$('f_del').onclick = async () => {
+  if (!confirm('Eliminare “' + editing.title + '”?')) return;
+  await DB.del(editing.id);
+  books = books.filter(b => b.id !== editing.id);
+  $('dlg').close(); renderAll(); toast('Libro eliminato');
+};
+$('addManual').onclick = () => openDialog(blankBook(), true);
+
+/* ========= libreria ========= */
+const collator = new Intl.Collator('it', { sensitivity: 'base', numeric: true });
+function renderList() {
+  const q = $('q').value.trim().toLowerCase();
+  let arr = books.filter(b => {
+    if (filterCat === '' && b.categories.length) return false;
+    if (filterCat && !b.categories.includes(filterCat)) return false;
+    if (!q) return true;
+    return (b.title + ' ' + b.authors + ' ' + b.isbn + ' ' + b.publisher + ' ' + b.notes).toLowerCase().includes(q);
+  });
+  const s = $('sort').value;
+  if (s === 'title') arr.sort((a, b) => collator.compare(a.title, b.title));
+  else if (s === 'author') arr.sort((a, b) => collator.compare(a.authors || '￿', b.authors || '￿') || collator.compare(a.title, b.title));
+  else arr.sort((a, b) => b.added - a.added);
+  if (!arr.length) {
+    $('list').innerHTML = `<div class="empty">${books.length ? 'Nessun libro corrisponde alla ricerca.' : 'La libreria è vuota.<br>Vai su <b>Scansiona</b> per aggiungere il primo libro.'}</div>`;
+    return;
+  }
+  $('list').innerHTML = arr.map(b => `
+    <div class="card" data-id="${b.id}">
+      <div class="cover" style="background-image:${b.cover ? `url('${esc(b.cover)}')` : 'none'}">${b.cover ? '' : '📕'}</div>
+      <div class="grow">
+        <h3>${esc(b.title)}</h3>
+        <div class="au">${esc(b.authors)}${b.year ? ' · ' + esc(b.year) : ''}</div>
+        <div class="cats">${b.read ? '<span class="badge read">letto</span>' : ''}${b.categories.map(c => `<span class="badge">${esc(c)}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+$('list').addEventListener('click', e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  const b = books.find(x => x.id === card.dataset.id); if (b) openDialog(b, false);
+});
+$('q').addEventListener('input', renderList);
+$('sort').addEventListener('change', renderList);
+function renderFilterChips() {
+  const none = books.filter(b => !b.categories.length).length;
+  let h = `<span class="chip ${filterCat === null ? 'on' : ''}" data-f="*">Tutti (${books.length})</span>`;
+  h += categories.map(c => `<span class="chip ${filterCat === c ? 'on' : ''}" data-f="${esc(c)}">${esc(c)} (${books.filter(b => b.categories.includes(c)).length})</span>`).join('');
+  if (none && categories.length) h += `<span class="chip ${filterCat === '' ? 'on' : ''}" data-f="">Senza categoria (${none})</span>`;
+  $('filterChips').innerHTML = h;
+}
+$('filterChips').addEventListener('click', e => {
+  const f = e.target.dataset && e.target.dataset.f; if (f === undefined) return;
+  filterCat = f === '*' ? null : f; renderFilterChips(); renderList();
+});
+
+/* ========= categorie ========= */
+function renderCats() {
+  $('catList').innerHTML = categories.length ? categories.map(c => `
+    <div class="cat-row">
+      <div class="n"><b>${esc(c)}</b> <small>${books.filter(b => b.categories.includes(c)).length} libri</small></div>
+      <button class="btn sec" data-ren="${esc(c)}">Rinomina</button>
+      <button class="btn sec" data-rm="${esc(c)}">Elimina</button>
+    </div>`).join('') : '<div class="empty">Ancora nessuna categoria.</div>';
+}
+async function addCat() {
+  const n = $('newCat').value.trim(); if (!n) return;
+  if (categories.some(c => c.toLowerCase() === n.toLowerCase())) { toast('Esiste già'); return; }
+  categories.push(n); categories.sort(collator.compare); await persistCats();
+  $('newCat').value = ''; renderAll();
+}
+$('addCat').onclick = addCat;
+$('newCat').addEventListener('keydown', e => { if (e.key === 'Enter') addCat(); });
+$('catList').addEventListener('click', async e => {
+  const ren = e.target.dataset && e.target.dataset.ren, rm = e.target.dataset && e.target.dataset.rm;
+  if (ren) {
+    const n = (prompt('Nuovo nome per “' + ren + '”:', ren) || '').trim();
+    if (!n || n === ren) return;
+    if (categories.some(c => c.toLowerCase() === n.toLowerCase() && c !== ren)) { toast('Esiste già una categoria con questo nome'); return; }
+    categories = categories.map(c => c === ren ? n : c).sort(collator.compare);
+    for (const b of books) if (b.categories.includes(ren)) { b.categories = b.categories.map(c => c === ren ? n : c); await DB.put(b); }
+    scanCats = scanCats.map(c => c === ren ? n : c);
+    if (filterCat === ren) filterCat = n;
+    await persistCats(); renderAll();
+  } else if (rm) {
+    const k = books.filter(b => b.categories.includes(rm)).length;
+    if (!confirm('Eliminare la categoria “' + rm + '”?' + (k ? '\nI ' + k + ' libri al suo interno restano in libreria.' : ''))) return;
+    categories = categories.filter(c => c !== rm);
+    for (const b of books) if (b.categories.includes(rm)) { b.categories = b.categories.filter(c => c !== rm); await DB.put(b); }
+    scanCats = scanCats.filter(c => c !== rm);
+    if (filterCat === rm) filterCat = null;
+    await persistCats(); renderAll();
+  }
+});
+function renderScanCats() {
+  scanCats = scanCats.filter(c => categories.includes(c));
+  $('scanCats').innerHTML = categories.length ? chipsHtml(scanCats, 'data-sc') : '<span class="note">Crea prima le categorie nella scheda Categorie (facoltativo).</span>';
+}
+$('scanCats').addEventListener('click', e => {
+  const c = e.target.dataset && e.target.dataset.sc; if (!c) return;
+  const i = scanCats.indexOf(c); if (i >= 0) scanCats.splice(i, 1); else scanCats.push(c);
+  renderScanCats();
+});
+
+/* ========= dati: esporta / importa ========= */
+function download(name, mime, text, bom = '') {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bom + text], { type: mime }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+const stamp = () => new Date().toISOString().slice(0, 10);
+$('expJson').onclick = async () => {
+  download('libri-' + stamp() + '.json', 'application/json', JSON.stringify({ app: 'libri', version: 1, exported: new Date().toISOString(), categories, books }, null, 1));
+  lastExport = Date.now(); await DB.set('lastExport', lastExport); renderAll(); toast('Backup scaricato');
+};
+$('expCsv').onclick = () => {
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const head = ['ISBN', 'Titolo', 'Autori', 'Editore', 'Anno', 'Pagine', 'Categorie', 'Letto', 'Note', 'Aggiunto'];
+  const rows = books.map(b => [b.isbn, b.title, b.authors, b.publisher, b.year, b.pages, b.categories.join(' | '), b.read ? 'sì' : '', b.notes, new Date(b.added).toISOString().slice(0, 10)].map(q).join(';'));
+  download('libri-' + stamp() + '.csv', 'text/csv;charset=utf-8', [head.map(q).join(';'), ...rows].join('\r\n'), '﻿');
+};
+$('impFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (!Array.isArray(j.books)) throw new Error('formato');
+    let add = 0, skip = 0;
+    const isbns = new Set(books.map(b => b.isbn).filter(Boolean)), ids = new Set(books.map(b => b.id));
+    for (const c of (j.categories || [])) if (!categories.includes(c)) categories.push(c);
+    for (const b of j.books) {
+      if (ids.has(b.id) || (b.isbn && isbns.has(b.isbn))) { skip++; continue; }
+      const nb = Object.assign(blankBook(), b); nb.categories = (nb.categories || []).filter(Boolean);
+      for (const c of nb.categories) if (!categories.includes(c)) categories.push(c);
+      await DB.put(nb); books.push(nb); ids.add(nb.id); if (nb.isbn) isbns.add(nb.isbn); add++;
+    }
+    categories.sort(collator.compare); await persistCats();
+    renderAll(); toast('Importati ' + add + ' libri' + (skip ? ' (' + skip + ' già presenti)' : ''));
+  } catch (err) { toast('File non valido'); }
+  e.target.value = '';
+});
+
+/* ========= interfaccia ========= */
+function renderStats() {
+  const read = books.filter(b => b.read).length;
+  $('stats').innerHTML = `${books.length} libri · ${read} letti · ${categories.length} categorie<br>` +
+    (lastExport ? 'Ultimo backup: ' + new Date(lastExport).toLocaleDateString('it-IT') : 'Nessun backup ancora fatto.');
+  const w = $('backupWarn');
+  const old = !lastExport || Date.now() - lastExport > 30 * 864e5;
+  if (books.length >= 10 && old) {
+    w.hidden = false;
+    w.textContent = lastExport ? 'Il backup ha più di 30 giorni: vai su Dati ed esportalo di nuovo.' : 'Non hai ancora fatto nessun backup: i libri sono solo su questo dispositivo. Vai su Dati ed esporta.';
+  } else w.hidden = true;
+}
+function renderAll() {
+  $('hdrCount').textContent = books.length + (books.length === 1 ? ' libro' : ' libri');
+  renderFilterChips(); renderList(); renderCats(); renderScanCats(); renderStats();
+}
+document.querySelectorAll('nav button').forEach(btn => btn.onclick = () => {
+  const t = btn.dataset.tab;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === btn));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === 'tab-' + t));
+  if (t !== 'scan') stopCam();
+  window.scrollTo(0, 0);
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) stopCam(); });
+
+(async function init() {
+  await DB.open();
+  books = await DB.all();
+  categories = (await DB.get('categories')) || [];
+  lastExport = (await DB.get('lastExport')) || 0;
+  renderAll();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
