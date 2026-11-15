@@ -1,6 +1,6 @@
 // Service worker: cache dei file dell'app per usarla anche offline.
 // Le ricerche ISBN (Google Books / Open Library) e le copertine richiedono internet.
-const CACHE = 'libri-v1';
+const CACHE = 'libri-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'lib/zxing.min.js'];
 
 self.addEventListener('install', e => {

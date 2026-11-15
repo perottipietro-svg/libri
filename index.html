@@ -141,6 +141,16 @@ h2.sec{font-size:16px;margin:20px 0 6px}
     <h2 class="sec">Importa</h2>
     <p class="note">Carica un backup JSON esportato dall’app: i libri nuovi vengono aggiunti, quelli già presenti (stesso ISBN) restano come sono.</p>
     <input type="file" id="impFile" accept=".json,application/json">
+    <h2 class="sec">Chiave Google Books</h2>
+    <p class="note">Per trovare i libri l’app usa Google Books. Senza chiave il limite gratuito condiviso si esaurisce spesso e molti libri non vengono riconosciuti. Con una tua chiave gratuita hai 1000 ricerche al giorno. La chiave resta solo su questo dispositivo.</p>
+    <div class="row">
+      <input type="text" id="gkeyIn" placeholder="Incolla qui la chiave API (AIza…)" autocomplete="off">
+      <button class="btn" id="gkeySave">Salva</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn sec" id="gkeyTest">Prova ricerca</button>
+      <span class="note" id="gkeyRes"></span>
+    </div>
     <h2 class="sec">Stato</h2>
     <div id="stats" class="note"></div>
   </section>
@@ -259,9 +269,11 @@ function normIsbn(raw) {
 }
 
 /* ========= ricerca dati libro online ========= */
+function gKey() { try { return localStorage.getItem('gkey') || ''; } catch (_) { return ''; } }
 async function lookupGoogle(isbn) {
-  const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&maxResults=1');
-  if (!r.ok) throw new Error('google ' + r.status);
+  const k = gKey();
+  const r = await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn + '&maxResults=1' + (k ? '&key=' + encodeURIComponent(k) : ''));
+  if (!r.ok) { const e = new Error('google ' + r.status); e.status = r.status; throw e; }
   const j = await r.json();
   const v = j.items && j.items[0] && j.items[0].volumeInfo;
   if (!v || !v.title) return null;
@@ -292,12 +304,15 @@ async function lookupOpenLibrary(isbn) {
   };
 }
 async function lookup(isbn) {
-  let netErr = false;
+  let reason = 'none';
   for (const fn of [lookupGoogle, lookupOpenLibrary]) {
     try { const r = await fn(isbn); if (r) return { info: r }; }
-    catch (e) { netErr = true; }
+    catch (e) {
+      if (fn === lookupGoogle && (e.status === 429 || e.status === 403)) reason = 'quota';
+      else if (reason !== 'quota') reason = 'net';
+    }
   }
-  return { info: null, netErr };
+  return { info: null, reason };
 }
 
 /* ========= aggiunta libro ========= */
@@ -332,9 +347,12 @@ async function addByIsbn(isbn) {
   if (dup) { setStatus('Già in libreria: ' + dup.title, 'bad'); beep(false); return; }
   busy = true;
   setStatus('Cerco ' + isbn + '…');
-  const { info, netErr } = await lookup(isbn);
+  const { info, reason } = await lookup(isbn);
   if (!info) {
-    setStatus((netErr ? 'Nessuna connessione o servizio non raggiungibile. ' : 'ISBN non trovato negli archivi. ') + 'Compila a mano.', 'bad');
+    const why = reason === 'quota' ? 'Google Books ha esaurito il limite gratuito: inserisci la tua chiave nella scheda Dati. '
+      : reason === 'net' ? 'Nessuna connessione o servizio non raggiungibile. '
+      : 'ISBN non trovato negli archivi. ';
+    setStatus(why + 'Compila a mano.', 'bad');
     beep(false);
     const b = blankBook(isbn); b.categories = [...scanCats];
     openDialog(b, true);   // busy resta true finché la scheda non si chiude
@@ -597,6 +615,21 @@ $('impFile').addEventListener('change', async e => {
   } catch (err) { toast('File non valido'); }
   e.target.value = '';
 });
+
+$('gkeyIn').value = gKey();
+$('gkeySave').onclick = () => {
+  try { const v = $('gkeyIn').value.trim(); v ? localStorage.setItem('gkey', v) : localStorage.removeItem('gkey'); toast(v ? 'Chiave salvata' : 'Chiave rimossa'); }
+  catch (_) { toast('Impossibile salvare la chiave'); }
+};
+$('gkeyTest').onclick = async () => {
+  $('gkeyRes').textContent = 'Provo…';
+  try {
+    const r = await lookupGoogle('9788804668237');
+    $('gkeyRes').textContent = r ? '✓ Funziona: ' + r.title : 'Connessione ok, ma libro di prova non trovato.';
+  } catch (e) {
+    $('gkeyRes').textContent = e.status === 429 ? '✗ Limite esaurito (429): serve una chiave valida.' : e.status === 400 || e.status === 403 ? '✗ Chiave non valida o non abilitata (' + e.status + ').' : '✗ Errore di rete.';
+  }
+};
 
 /* ========= interfaccia ========= */
 function renderStats() {
